@@ -39,7 +39,7 @@ describe('[Challenge] Naive receiver', function () {
 
     it('Execution', async function () {
         /* The second solution with 1 transaction */
-        const AttackFactory = await ethers.getContractFactory('Attack', player);
+        const AttackFactory = await ethers.getContractFactory('AttackNR', player);
         attack = await AttackFactory.connect(player).deploy(receiver.address,pool.address);
 
         /* The first solution
