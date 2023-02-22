@@ -1,5 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
+const { Contract } = require('hardhat/internal/hardhat-network/stack-traces/model');
 
 describe('[Challenge] Unstoppable', function () {
     let deployer, player, someUser;
@@ -44,7 +45,11 @@ describe('[Challenge] Unstoppable', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        await token.connect(player).transfer(vault.address, INITIAL_PLAYER_TOKEN_BALANCE);
+        expect(await token.balanceOf(vault.address)).to.eq(INITIAL_PLAYER_TOKEN_BALANCE+TOKENS_IN_VAULT);
+        console.log("vault = ", vault.address);
+        console.log("token = ", token.address); 
+        console.log("receiverContract = ", receiverContract.address);
     });
 
     after(async function () {
