@@ -1,9 +1,10 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat');  
 const { expect } = require('chai');
 
 describe('[Challenge] Backdoor', function () {
     let deployer, users, player;
     let masterCopy, walletFactory, token, walletRegistry;
+    let attack;
 
     const AMOUNT_TOKENS_DISTRIBUTED = 40n * 10n ** 18n;
 
@@ -45,7 +46,11 @@ describe('[Challenge] Backdoor', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackB', player);
+        attack = await AttackFactory.connect(player).deploy(walletFactory.address,masterCopy.address,walletRegistry.address,users,token.address,player.address);        
+
+        /*const check = await token.callStatic.allowance(await walletRegistry.wallets(users[0]),attack.address);
+        console.log("check = ", check.div(10n**18n));*/
     });
 
     after(async function () {
@@ -54,7 +59,7 @@ describe('[Challenge] Backdoor', function () {
         // Player must have used a single transaction
         expect(await ethers.provider.getTransactionCount(player.address)).to.eq(1);
 
-        for (let i = 0; i < users.length; i++) {
+        for (let i = 0; i < users.length; i++) { 
             let wallet = await walletRegistry.wallets(users[i]);
             
             // User must have registered a wallet
