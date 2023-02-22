@@ -1,9 +1,10 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 
 describe('[Challenge] Truster', function () {
     let deployer, player;
     let token, pool;
+    let attack;
 
     const TOKENS_IN_POOL = 1000000n * 10n ** 18n;
 
@@ -22,11 +23,13 @@ describe('[Challenge] Truster', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackTruster', deployer);
+        attack = await AttackFactory.connect(player).deploy(player.address,pool.address,token.address,TOKENS_IN_POOL);
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS - NO NEED TO CHANGE ANYTHING HERE */
+        expect(await ethers.provider.getTransactionCount(player.address)).to.eq(1);
 
         // Player has taken all tokens from the pool
         expect(
