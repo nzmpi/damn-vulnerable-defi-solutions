@@ -13,19 +13,13 @@ contract Solution {
         BasicForwarder.Request memory request,
         bytes memory signature
     ) payable {
-        // get all receiver's weth 
+        // get all receiver's weth
         bytes[] memory data = new bytes[](10);
         for (uint256 i; i < 10; ++i) {
-            data[i] = abi.encodeWithSelector(
-                pool.flashLoan.selector,
-                receiver,
-                address(weth),
-                0,
-                ""
-            );
+            data[i] = abi.encodeWithSelector(pool.flashLoan.selector, receiver, address(weth), 0, "");
         }
         pool.multicall(data);
-        
+
         // get all weth
         forwarder.execute(request, signature);
     }
