@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 import {DamnValuableVotes} from "../../src/DamnValuableVotes.sol";
 import {SimpleGovernance} from "../../src/selfie/SimpleGovernance.sol";
 import {SelfiePool, IERC3156FlashBorrower} from "../../src/selfie/SelfiePool.sol";
-import {console} from "forge-std/Test.sol";
 
 contract Solution is IERC3156FlashBorrower {
     SimpleGovernance immutable governance;
