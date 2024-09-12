@@ -11,6 +11,7 @@ import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {FreeRiderNFTMarketplace} from "../../src/free-rider/FreeRiderNFTMarketplace.sol";
 import {FreeRiderRecoveryManager} from "../../src/free-rider/FreeRiderRecoveryManager.sol";
 import {DamnValuableNFT} from "../../src/DamnValuableNFT.sol";
+import {Solution} from "./Solution.sol";
 
 contract FreeRiderChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -122,7 +123,10 @@ contract FreeRiderChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_freeRider() public checkSolvedByPlayer {}
+    function test_freeRider() public checkSolvedByPlayer {
+        Solution solution = new Solution(nft, marketplace, weth, recoveryManager, AMOUNT_OF_NFTS, player);
+        solution.solve{value: PLAYER_INITIAL_ETH_BALANCE}(uniswapPair, NFT_PRICE);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
