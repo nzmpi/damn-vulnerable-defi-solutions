@@ -7,6 +7,7 @@ import {Safe} from "@safe-global/safe-smart-account/contracts/Safe.sol";
 import {SafeProxyFactory} from "@safe-global/safe-smart-account/contracts/proxies/SafeProxyFactory.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {WalletRegistry} from "../../src/backdoor/WalletRegistry.sol";
+import {Solution} from "./Solution.sol";
 
 contract BackdoorChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -69,7 +70,18 @@ contract BackdoorChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_backdoor() public checkSolvedByPlayer {}
+    function test_backdoor() public checkSolvedByPlayer {
+        new Solution(
+            token,
+            walletFactory,
+            address(singletonCopy),
+            walletRegistry,
+            users,
+            1,
+            recovery,
+            AMOUNT_TOKENS_DISTRIBUTED / users.length
+        );
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
