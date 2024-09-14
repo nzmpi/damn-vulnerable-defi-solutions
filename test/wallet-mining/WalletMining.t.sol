@@ -135,9 +135,7 @@ contract WalletMiningChallenge is Test {
             ++saltNonce;
             proxy = vm.computeCreate2Address(
                 keccak256(bytes.concat(keccak256(initializer), bytes32(saltNonce))),
-                keccak256(
-                    bytes.concat(proxyFactory.proxyCreationCode(), bytes32(uint256(uint160(address(singletonCopy)))))
-                ),
+                keccak256(bytes.concat(proxyFactory.proxyCreationCode(), abi.encode(address(singletonCopy)))),
                 address(proxyFactory)
             );
         }
