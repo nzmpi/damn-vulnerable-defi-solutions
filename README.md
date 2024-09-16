@@ -1,5 +1,11 @@
 # Damn Vulnerable DeFi
 
+All solutions for v4. 
+
+Solutions for v3 can be found [here](https://github.com/nzmpi/damn-vulnerable-defi-solutions/tree/v3).
+
+=============================
+
 Damn Vulnerable DeFi is _the_ smart contract security playground for developers, security researchers and educators.
 
 Perhaps the most sophisticated vulnerable set of Solidity smart contracts ever witnessed, it features flashloans, price oracles, governance, NFTs, DEXs, lending pools, smart contract wallets, timelocks, vaults, meta-transactions, token distributions, upgradeability and more.
